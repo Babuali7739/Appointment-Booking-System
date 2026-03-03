@@ -36,10 +36,13 @@ const __dirname = path.resolve();
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 // React routing support
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+app.get("/", (req, res) => {
+  res.send("API is working fine");
 });
 
+app.all("/*", (req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
 // =============================
 
 app.listen(PORT, () => {
