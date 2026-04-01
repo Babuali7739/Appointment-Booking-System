@@ -6,6 +6,7 @@ import { AppContext } from "../context/AppContext";
 const Navbar = () => {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const { token, setToken, userData } = useContext(AppContext);
 
   const logout = () => {
@@ -45,40 +46,61 @@ const Navbar = () => {
 
         <div className="flex items-center">
           {token && userData ? (
-            <div className="flex items-center gap-2 cursor-pointer group relative">
-              <img
-                className="w-8 rounded-full"
-                src={userData.image}
-                alt="profile"
-              />
-              <img
-                className="w-2.5"
-                src={assets.dropdown_icon}
-                alt="dropdown"
-              />
+            <div className="relative">
 
-              <div className="absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block">
-                <div className="min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4">
-                  <p
-                    onClick={() => navigate("/my-profile")}
-                    className="hover:text-black cursor-pointer"
-                  >
-                    My Profile
-                  </p>
-                  <p
-                    onClick={() => navigate("/my-appointments")}
-                    className="hover:text-black cursor-pointer"
-                  >
-                    My Appointments
-                  </p>
-                  <p
-                    onClick={logout}
-                    className="hover:text-black cursor-pointer"
-                  >
-                    Logout
-                  </p>
-                </div>
+              {/* Profile Button */}
+              <div
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <img
+                  className="w-8 rounded-full"
+                  src={userData.image}
+                  alt="profile"
+                />
+                <img
+                  className="w-2.5"
+                  src={assets.dropdown_icon}
+                  alt="dropdown"
+                />
               </div>
+
+              {/* Dropdown Menu */}
+              {showDropdown && (
+                <div className="absolute right-0 mt-3 text-base font-medium text-gray-600 z-20">
+                  <div className="min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4 shadow-lg">
+                    <p
+                      onClick={() => {
+                        navigate("/my-profile");
+                        setShowDropdown(false);
+                      }}
+                      className="hover:text-black cursor-pointer"
+                    >
+                      My Profile
+                    </p>
+
+                    <p
+                      onClick={() => {
+                        navigate("/my-appointments");
+                        setShowDropdown(false);
+                      }}
+                      className="hover:text-black cursor-pointer"
+                    >
+                      My Appointments
+                    </p>
+
+                    <p
+                      onClick={() => {
+                        logout();
+                        setShowDropdown(false);
+                      }}
+                      className="hover:text-black cursor-pointer"
+                    >
+                      Logout
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <button
@@ -96,9 +118,8 @@ const Navbar = () => {
             alt="menu"
           />
           <div
-            className={`${
-              showMenu ? "fixed w-full" : "h-0 w-0"
-            } md:hidden right-0 top-0 bottom-0 z-20 overflow-hidden bg-white transition-full duration-300`}
+            className={`${showMenu ? "fixed w-full" : "h-0 w-0"
+              } md:hidden right-0 top-0 bottom-0 z-20 overflow-hidden bg-white transition-full duration-300`}
           >
             <div className="flex items-center justify-between px-5 py-6">
               <img className="w-36" src={assets.logo} alt="logo" />
