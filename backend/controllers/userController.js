@@ -8,6 +8,9 @@ import userModel from "../models/userModel.js";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 
+import sendEmail from "../config/sendEmail.js";
+import sendSMS from "../config/sendSMS.js";
+
 // API for user registration
 const registerUser = async (req, res) => {
   try {
@@ -145,7 +148,7 @@ const bookAppointment = async (req, res) => {
 
     let slots_booked = docData.slots_booked;
 
-    // checking for slot availability
+    // check slot availability
     if (slots_booked[slotDate]) {
       if (slots_booked[slotDate].includes(slotTime)) {
         return res.json({ success: false, message: "Slot not available" });
@@ -173,12 +176,70 @@ const bookAppointment = async (req, res) => {
     };
 
     const newAppointment = new appointmentModel(appointmentData);
+
     await newAppointment.save();
 
-    // save new data in doctor
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
-    res.json({ success: true, message: "Appointment Booked" });
+    // clinic address (fallback if not present)
+    const clinicAddress =
+      docData.address?.line1 || "City Medical Center, Main Road";
+
+    // payment link
+    // const paymentLink = `${process.env.FRONTEND_URL}/payment/${newAppointment._id}`;
+
+    // 📧 EMAIL MESSAGE
+    const emailMessage = `
+Hello ${userData.name},
+
+Greetings from Prescripto!
+
+Your appointment has been successfully booked. Here are your appointment details:
+
+Doctor: Dr. ${docData.name}
+Speciality: ${docData.speciality}
+
+Date: ${slotDate}
+Time: ${slotTime}
+Clinic Address:${clinicAddress}
+
+Please arrive 10 minutes before your scheduled appointment.
+If you need to cancel or reschedule your appointment, please visit your dashboard.
+
+Thank you for choosing our services.
+
+Best Regards,
+Prescripto Team
+`;
+
+    // send email
+    await sendEmail(
+      userData.email,
+      "Appointment Confirmation - Prescripto",
+      emailMessage
+    );
+
+    // 📱 SMS MESSAGE
+    const smsMessage = `
+Hello ${userData.name},
+
+Your appointment with Dr. ${docData.name} has been booked.
+
+Date: ${slotDate}
+Time: ${slotTime}
+Address: ${clinicAddress}
+
+- Prescripto Team
+`;
+
+    // send SMS
+    await sendSMS(userData.phone, smsMessage);
+
+    res.json({
+      success: true,
+      message: "Appointment Booked Successfully",
+    });
+
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -211,15 +272,17 @@ const cancelAppointment = async (req, res) => {
       return res.json({ success: false, message: "Unauthorized action" });
     }
 
+    // mark appointment cancelled
     await appointmentModel.findByIdAndUpdate(appointmentId, {
       cancelled: true,
     });
 
-    // releasing doctor slot
     const { docId, slotDate, slotTime } = appointmentData;
 
     const doctorData = await doctorModel.findById(docId);
+    const userData = await userModel.findById(userId);
 
+    // releasing doctor slot
     let slots_booked = doctorData.slots_booked;
 
     slots_booked[slotDate] = slots_booked[slotDate].filter(
@@ -228,7 +291,54 @@ const cancelAppointment = async (req, res) => {
 
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
+    const clinicAddress =
+      doctorData.address?.line1 || "City Medical Center, Main Road";
+
+    // 📧 EMAIL MESSAGE
+    const emailMessage = `
+Hello ${userData.name},
+
+Greetings from Prascripto!
+
+Your appointment has been successfully cancelled.
+
+Appointment Details:
+
+Doctor: Dr. ${doctorData.name}
+Date: ${slotDate}
+Time: ${slotTime}
+Clinic Address:${clinicAddress}
+
+If this cancellation was made by mistake, you can book a new appointment anytime on our website.
+Visit: https://appointment-booking-system-mu.vercel.app
+
+Thank you for using Prascripto.
+
+Best Regards,
+Prascripto Healthcare Team
+`;
+
+    await sendEmail(
+      userData.email,
+      "Appointment Cancelled - Prascripto",
+      emailMessage
+    );
+
+    // 📱 SMS MESSAGE
+    const smsMessage = `
+Hello ${userData.name},
+
+Your appointment with Dr. ${doctorData.name} on ${slotDate} at ${slotTime} has been cancelled.
+
+You can book a new appointment anytime on Prascripto.
+
+- Prascripto Healthcare
+`;
+
+    await sendSMS(userData.phone, smsMessage);
+
     res.json({ success: true, message: "Appointment cancelled" });
+
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
