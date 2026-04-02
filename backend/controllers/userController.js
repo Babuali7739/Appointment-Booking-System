@@ -196,7 +196,7 @@ Greetings from Prescripto!
 
 Your appointment has been successfully booked. Here are your appointment details:
 
-Doctor: Dr. ${docData.name}
+Doctor: ${docData.name}
 Speciality: ${docData.speciality}
 
 Date: ${slotDate}
@@ -223,7 +223,7 @@ Prescripto Team
     const smsMessage = `
 Hello ${userData.name},
 
-Your appointment with Dr. ${docData.name} has been booked.
+Your appointment with ${docData.name} has been booked.
 
 Date: ${slotDate}
 Time: ${slotTime}
@@ -304,7 +304,7 @@ Your appointment has been successfully cancelled.
 
 Appointment Details:
 
-Doctor: Dr. ${doctorData.name}
+Doctor: ${doctorData.name}
 Date: ${slotDate}
 Time: ${slotTime}
 Clinic Address:${clinicAddress}
